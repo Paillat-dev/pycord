@@ -464,7 +464,9 @@ class HTTPClient:
         self.token = token
 
         try:
-            data = await self.request(Route("GET", "/users/@me"), model=models.User)
+            data = await self.request(
+                Route("GET", "/users/@me"), model=models.UserResponse
+            )
         except HTTPException as exc:
             self.token = old_token
             if exc.status == 401:

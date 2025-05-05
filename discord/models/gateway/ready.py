@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ..base import Guild, UnavailableGuild, User
-from ..types.utils import MISSING, MissingSentinel
+from ..generated import GuildResponse, UserResponse
+from ..utils import MISSING, MissingSentinel
 from .base import GatewayEvent
 
 
 class ReadyData(BaseModel):
     v: int
-    user: User
+    user: UserResponse
     private_channels: list[dict]  # TODO: Channel
-    guilds: list[Guild | UnavailableGuild]
+    guilds: list[GuildResponse]
     session_id: str
     shard: list[int] | MissingSentinel = MISSING
     application: dict  # TODO: Application

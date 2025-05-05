@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
 from typing_extensions import Self, final
@@ -141,7 +139,7 @@ class UserFlags(BaseFlags):
         """:class:`bool`: Returns ``True`` if the user is an Active Developer."""
         return 1 << 22
 
-    def is_subset(self, other: Any) -> bool:  # pyright: ignore [reportExplicitAny]
+    def is_subset(self, other: Any) -> bool:
         """Returns ``True`` if self has the same or fewer flags as other."""
         if isinstance(other, UserFlags):
             return (self.value & other.value) == self.value
@@ -149,7 +147,7 @@ class UserFlags(BaseFlags):
             f"Cannot compare {self.__class__.__name__} with {other.__class__.__name__}"
         )
 
-    def is_superset(self, other: Any) -> bool:  # pyright: ignore [reportExplicitAny]
+    def is_superset(self, other: Any) -> bool:
         """Returns ``True`` if self has the same or more flags as other."""
         if isinstance(other, UserFlags):
             return (self.value | other.value) == self.value
@@ -157,15 +155,11 @@ class UserFlags(BaseFlags):
             f"Cannot compare {self.__class__.__name__} with {other.__class__.__name__}"
         )
 
-    def is_strict_subset(
-        self, other: Any
-    ) -> bool:  # pyright: ignore [reportExplicitAny]
+    def is_strict_subset(self, other: Any) -> bool:
         """Returns ``True`` if the flags on other are a strict subset of those on self."""
         return self.is_subset(other) and self != other
 
-    def is_strict_superset(
-        self, other: Any
-    ) -> bool:  # pyright: ignore [reportExplicitAny]
+    def is_strict_superset(self, other: Any) -> bool:
         """Returns ``True`` if the flags on other are a strict superset of those on self."""
         return self.is_superset(other) and self != other
 

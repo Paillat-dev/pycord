@@ -81,7 +81,7 @@ class BaseFlags:
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        _source_type: Any,  # pyright: ignore [reportExplicitAny]
+        _source_type: Any,
         _handler: GetCoreSchemaHandler,
     ) -> CoreSchema:
         return core_schema.json_or_python_schema(

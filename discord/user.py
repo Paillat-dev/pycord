@@ -140,13 +140,13 @@ class BaseUser(_UserTag):
     def __hash__(self) -> int:
         return self.id >> 22
 
-    def _update(self, data: models.User) -> None:
+    def _update(self, data: models.UserResponse | models.UserPIIResponse) -> None:
         self.name = data.username
         self.id = data.id
         self.discriminator = data.discriminator
         self.global_name = data.global_name
         self._avatar = data.avatar
-        self._banner = data.banner if data.banner is not models.MISSING else None
+        self._banner = data.banner
         self._accent_colour = (
             data.accent_color if data.accent_color is not models.MISSING else None
         )
@@ -445,15 +445,15 @@ class ClientUser(BaseUser):
         )
 
     @override
-    def _update(self, data: models.User) -> None:
+    def _update(self, data: models.UserPIIResponse) -> None:
         super()._update(data)
         # There's actually an Optional[str] phone field as well, but I won't use it
-        self.verified = data.verified if data.verified is not models.MISSING else False
-        self.locale = data.locale if data.locale is not models.MISSING else None
+        self.verified = data.verified if data.verified else False
+        self.locale = data.locale if data.locale else None
         self._flags = (
             data.flags
             if data.flags is not models.MISSING
-            else models.types.UserFlags.none()
+            else models.flags.UserFlags.none()
         )
         self.mfa_enabled = (
             data.mfa_enabled if data.mfa_enabled is not models.MISSING else False

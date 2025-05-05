@@ -1,29 +1,11 @@
-from discord.models.base.role import Role
-
-from . import gateway, types
-from .base import (
-    AvatarDecorationData,
-    Ban,
-    Emoji,
-    Guild,
-    Sticker,
-    UnavailableGuild,
-    User,
-)
-from .types import Snowflake
-from .types.utils import MISSING
+# Order matters!
+from . import flags, gateway
+from .generated import *
+from .utils import MISSING, MissingSentinel
 
 __all__ = (
-    "Emoji",
-    "Guild",
-    "UnavailableGuild",
-    "Role",
-    "Sticker",
-    "types",
-    "User",
-    "MISSING",
-    "AvatarDecorationData",
     "gateway",
-    "Ban",
-    "Snowflake",
+    "flags",
+    "MISSING",
+    "MissingSentinel",
 )
