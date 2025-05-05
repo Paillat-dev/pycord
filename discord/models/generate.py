@@ -24,61 +24,31 @@ class SchemaType(TypedDict):
     components: dict[str, Any]
 
 
-FLAGS_MAPPING = {"user": "UserFlags"}
-
-
-def replace_flags(path: pathlib.Path):
+def remove_class(path: pathlib.Path, class_name: str):
     """
-    Replace Int53Type flags annotations with proper class-specific flag types.
+    Remove a class definition from a file.
 
     Args:
         path: Path to the file to modify
+        class_name: Name of the class to remove
     """
-    with open(path, encoding="utf-8") as f:
+    with path.open(encoding="utf-8") as f:
         content = f.read()
 
     tree = ast.parse(content)
-    modified = False
-
+    modified: bool = False
     for node in tree.body:
         if isinstance(node, ast.ClassDef):
-            class_name = node.name
-
-            for class_item in node.body:
-                if isinstance(class_item, ast.AnnAssign) and isinstance(
-                    class_item.target, ast.Name
-                ):
-                    if (
-                        class_item.target.id == "flags"
-                        and isinstance(class_item.annotation, ast.Name)
-                        and class_item.annotation.id == "Int53Type"
-                    ):
-
-                        flag_type = None
-                        for pattern, flag_name in FLAGS_MAPPING.items():
-                            if pattern.lower() in class_name.lower():
-                                flag_type = flag_name
-                                break
-
-                        if flag_type:
-                            class_item.annotation = ast.Name(
-                                id=flag_type, ctx=ast.Load()
-                            )
-                            modified = True
-                            logging.info(
-                                f"Replaced flags annotation in {class_name} with {flag_type}"
-                            )
-                        else:
-                            logging.warning(
-                                f"Could not find appropriate flag type for {class_name}"
-                            )
-
+            if node.name == class_name:
+                # remove the class definition
+                tree.body.remove(node)
+                modified = True
+                logging.info(f"Removed SnowflakeType class definition")
+                break
     if modified:
-        with open(path, "w", encoding="utf-8") as f:
+        with path.open("w", encoding="utf-8") as f:
             f.write(ast.unparse(tree))
-        logging.info(f"Updated flags annotations in {path}")
-    else:
-        logging.info(f"No flags annotations needed updating in {path}")
+        logging.info(f"Updated {path} by removing {class_name}")
 
 
 def get_classes_from_file(file_path: pathlib.Path):
@@ -203,10 +173,8 @@ def generate():
         )
     logging.info("Schemas generated")
 
-    replace_flags(schemas_path)
-    add_import(schemas_path, "from ...flags import *\n\n")
+    add_import(schemas_path, "from ...type import Snowflake as SnowflakeType\n\n")
     logging.info("Flags replaced")
-
     apply_patches(schemas_path, patches.get("schemas", {}))
 
     format(schemas_path)
@@ -273,6 +241,9 @@ def generate():
         format(destination_path)
 
         apply_patches(destination_path, patches.get(path, {}))
+
+    # remove now because else they are not removed from the other files too
+    remove_class(schemas_path, "SnowflakeType")
 
     paths -= failures
 

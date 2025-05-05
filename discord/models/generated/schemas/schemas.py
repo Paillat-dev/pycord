@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, RootModel
 
-from ...flags import UserFlags
+from ...type import Snowflake as SnowflakeType
 
 
 class AccessToken(RootModel[str]):
@@ -3660,10 +3660,6 @@ class SnowflakeSelectDefaultValueTypes(RootModel[str]):
     root: str
 
 
-class SnowflakeType(RootModel[str]):
-    root: Annotated[str, Field(pattern="^(0|[1-9][0-9]*)$")]
-
-
 class SortingOrder(RootModel[str]):
     root: str
 
@@ -4177,7 +4173,7 @@ class UserPIIResponse(BaseModel):
     avatar: str | None = None
     discriminator: str
     public_flags: int
-    flags: UserFlags
+    flags: Int53Type
     bot: bool | None = None
     system: bool | None = None
     banner: str | None = None
@@ -4203,7 +4199,7 @@ class UserResponse(BaseModel):
     avatar: str | None = None
     discriminator: str
     public_flags: int
-    flags: UserFlags
+    flags: Int53Type
     bot: bool | None = None
     system: bool | None = None
     banner: str | None = None

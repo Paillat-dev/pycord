@@ -140,7 +140,7 @@ class BaseUser(_UserTag):
     def __hash__(self) -> int:
         return self.id >> 22
 
-    def _update(self, data: models.UserResponse | models.UserPIIResponse) -> None:
+    def _update(self, data: models.User | models.UserPIIResponse) -> None:
         self.name = data.username
         self.id = data.id
         self.discriminator = data.discriminator
@@ -421,7 +421,7 @@ class ClientUser(BaseUser):
         mfa_enabled: bool
         _flags: models.types.UserFlags
 
-    def __init__(self, *, state: ConnectionState, data: models.User) -> None:
+    def __init__(self, *, state: ConnectionState, data: models.UserPIIResponse) -> None:
         super().__init__(state=state, data=data)
 
     @override
@@ -445,7 +445,7 @@ class ClientUser(BaseUser):
         )
 
     @override
-    def _update(self, data: models.UserPIIResponse) -> None:
+    def _update(self, data: models.UserPII) -> None:
         super()._update(data)
         # There's actually an Optional[str] phone field as well, but I won't use it
         self.verified = data.verified if data.verified else False

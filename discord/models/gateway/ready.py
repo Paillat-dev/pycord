@@ -2,16 +2,22 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from ..definitions import UserPII
 from ..generated import GuildResponse, UserResponse
-from ..utils import MISSING, MissingSentinel
+from ..type import MISSING, MissingSentinel, Snowflake
 from .base import GatewayEvent
+
+
+class UnavailableGuild(BaseModel):
+    id: Snowflake
+    unavailable: bool
 
 
 class ReadyData(BaseModel):
     v: int
-    user: UserResponse
+    user: UserPII
     private_channels: list[dict]  # TODO: Channel
-    guilds: list[GuildResponse]
+    guilds: list[UnavailableGuild | GuildResponse]
     session_id: str
     shard: list[int] | MissingSentinel = MISSING
     application: dict  # TODO: Application

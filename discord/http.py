@@ -455,7 +455,7 @@ class HTTPClient:
 
     # login management
 
-    async def static_login(self, token: str) -> models.User:
+    async def static_login(self, token: str) -> models.UserPIIResponse:
         # Necessary to get aiohttp to stop complaining about session creation
         self.__session = aiohttp.ClientSession(
             connector=self.connector, ws_response_class=DiscordClientWebSocketResponse
@@ -464,9 +464,7 @@ class HTTPClient:
         self.token = token
 
         try:
-            data = await self.request(
-                Route("GET", "/users/@me"), model=models.UserResponse
-            )
+            data = await self.request(Route("GET", "/users/@me"), model=models.UserPII)
         except HTTPException as exc:
             self.token = old_token
             if exc.status == 401:

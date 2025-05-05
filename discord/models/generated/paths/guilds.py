@@ -26,7 +26,6 @@ from ..schemas import (
     GuildMemberResponse,
     GuildMFALevel,
     GuildRoleResponse,
-    GuildsGuildIdRolesPatchRequestItem,
     GuildStickerResponse,
     GuildSubscriptionIntegrationResponse,
     GuildTemplateResponse,
@@ -295,7 +294,7 @@ class GuildsGuildIdRolesGetResponse(RootModel[list[GuildRoleResponse]]):
 
 
 class GuildsGuildIdRolesPatchRequest(
-    RootModel[list[GuildsGuildIdRolesPatchRequestItem]]
+    RootModel["list[GuildsGuildIdRolesPatchRequestItem]"]
 ):
     root: list[GuildsGuildIdRolesPatchRequestItem]
 
