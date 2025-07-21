@@ -1,4 +1,4 @@
-name: Quality Checks
+name: Release
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
