@@ -1,9 +1,6 @@
 [build-system]
-requires = [
-    "setuptools>=62.6,<=80.9.0",
-    "setuptools-scm>=6.2,<=8.3.1",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "py-cord"
@@ -17,7 +14,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License-Expression :: MIT",
+    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Operating System :: OS Independent",
@@ -32,7 +29,11 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = ["version"]
+dependencies = [
+    "aiohttp>=3.6.0,<4.0",
+    "typing-extensions>=4,<5",
+]
 
 [project.urls]
 Homepage = "https://pycord.dev"
@@ -42,31 +43,58 @@ Documentation = "https://docs.pycord.dev"
 Tracker = "https://github.com/Pycord-Development/pycord/issues"
 Funding = "https://patreon.com/pycord"
 
-[tool.setuptools]
-packages = [
-    "discord",
-    "discord.types",
-    "discord.sinks",
-    "discord.ui",
-    "discord.webhook",
-    "discord.commands",
-    "discord.ext.commands",
-    "discord.ext.tasks",
-    "discord.ext.pages",
-    "discord.ext.bridge",
-    "discord.bin",
+[project.optional-dependencies]
+voice = [
+    "pynacl>=1.3.0,<1.6",
+]
+speed = [
+    "aiohttp[speedups]>=3.11.18",
+    "msgspec~=0.19.0",
 ]
 
-[tool.setuptools.dynamic]
-dependencies = {file = "requirements/_.txt"}
-readme = {content-type = "text/x-rst", file = "README.rst"}
+[dependency-groups]
+#docs = [
+#    "furo==2024.8.6",
+#    "levenshtein==0.27.1",
+#    "myst-parser[linkify]==4.0.0",
+#    "sphinx==8.0.2",
+#    "sphinx-autodoc-typehints==2.2.3",
+#    "sphinx-copybutton==0.5.2",
+#    "sphinx-intl==2.3.1",
+#    "sphinxcontrib-trio==1.1.2",
+#    "sphinxcontrib-websupport==2.0.0",
+#    "sphinxext-opengraph==0.9.1",
+#    "typing-extensions==4.13.1",
+#]
+dev = [
+    "codespell==2.4.1",
+    "coverage~=7.8",
+    "mypy~=1.15.0",
+    "pre-commit==4.2.0",
+    "pytest~=8.3.5",
+    "pytest-asyncio~=0.24.0",
+    "bandit==1.8.3",
+    "codespell==2.4.1",
+    "flake8==7.1.2",
+]
 
-[tool.setuptools.dynamic.optional-dependencies]
-docs = {file = "requirements/docs.txt"}
-speed = {file = "requirements/speed.txt"}
-voice = {file = "requirements/voice.txt"}
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools_scm]
+[tool.hatch.build.hooks.vcs]
+version-file = "discord/_version.py"
+
+[tool.hatch.build.targets.wheel]
+only-packages = true
+packages = ["discord"]
+only-include = ["discord", "LICENSE", "pyproject.toml", "discord/bin/*.dll"]
+artifacts = ["discord/bin/*.dll"]
+
+[tool.hatch.build.targets.sdist]
+only-packages = true
+packages = ["discord"]
+only-include = ["discord", "README.rst", "LICENSE", "pyproject.toml", "discord/bin/*.dll"]
+artifacts = ["discord/bin/*.dll"]
 
 [tool.black]
 target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
