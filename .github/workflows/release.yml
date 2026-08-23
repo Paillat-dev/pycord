@@ -62,7 +62,7 @@ jobs:
 
       # ADMIN_GITHUB_TOKEN authenticates as NyuwBot. The NyuwBot ruleset team is
       # the explicit bypass actor for protected master and version-branch writes.
-      - name: "Checkout Repository as NyuwBot"
+      - name: "Checkout Repository as release automation"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
@@ -101,12 +101,12 @@ jobs:
           test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
           test -z "$(git status --porcelain)"
 
-      - name: "Require the NyuwBot automation identity"
+      - name: "Require the release automation identity"
         env:
           ADMIN_GITHUB_TOKEN: ${{ secrets.ADMIN_GITHUB_TOKEN }}
         run: >-
           node .github/scripts/release-tools.mjs check-github-identity
-          --expected-login NyuwBot
+          --expected-login "${{ vars.RELEASE_BOT_LOGIN || 'NyuwBot' }}"
           --token-env ADMIN_GITHUB_TOKEN
 
       - name: "Derive previous production tags"
@@ -133,11 +133,14 @@ jobs:
       - name: "Format the prepared changelog"
         run: mdformat CHANGELOG.md
 
-      - name: "Commit prepared changelog as NyuwBot"
+      - name: "Commit prepared changelog as release automation"
+        env:
+          BOT_LOGIN: ${{ vars.RELEASE_BOT_LOGIN || 'NyuwBot' }}
+          BOT_EMAIL: ${{ vars.RELEASE_BOT_EMAIL || 'nyuw@aitsys.dev' }}
         run: |
           set -euo pipefail
-          git config user.name "NyuwBot"
-          git config user.email "nyuw@aitsys.dev"
+          git config user.name "$BOT_LOGIN"
+          git config user.email "$BOT_EMAIL"
           git add -- CHANGELOG.md
           git diff --cached --exit-code && {
             echo "::error::The changelog helper produced no committed change."
