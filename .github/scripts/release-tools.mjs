@@ -1443,10 +1443,25 @@ export function assertImmutableReleaseSetting(payload) {
   });
 }
 
+const PYPI_INDEX_BASE_URLS = Object.freeze({
+  pypi: "https://pypi.org",
+  testpypi: "https://test.pypi.org",
+});
+
+function resolvePypiIndexBaseUrl(index) {
+  const name = index ?? "pypi";
+  const baseUrl = PYPI_INDEX_BASE_URLS[name];
+  if (!baseUrl) {
+    fail(`invalid PyPI index '${name}'`);
+  }
+  return baseUrl;
+}
+
 export async function assertPypiVersionUnused(
   project,
   version,
   fetchImplementation = globalThis.fetch,
+  baseUrl = PYPI_INDEX_BASE_URLS.pypi,
 ) {
   const projectName = requireString(project, "PyPI project");
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(projectName)) {
@@ -1457,7 +1472,7 @@ export async function assertPypiVersionUnused(
     fail("a Fetch API implementation is required");
   }
 
-  const url = `https://pypi.org/pypi/${encodeURIComponent(projectName)}/${encodeURIComponent(version)}/json`;
+  const url = `${baseUrl}/pypi/${encodeURIComponent(projectName)}/${encodeURIComponent(version)}/json`;
   const response = await fetchImplementation(url, {
     headers: { Accept: "application/json" },
     redirect: "error",
@@ -1477,6 +1492,7 @@ export async function assertPypiVersionPublished(
   version,
   artifacts,
   fetchImplementation = globalThis.fetch,
+  baseUrl = PYPI_INDEX_BASE_URLS.pypi,
 ) {
   const projectName = requireString(project, "PyPI project");
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(projectName)) {
@@ -1490,7 +1506,7 @@ export async function assertPypiVersionPublished(
     fail("validated local artifacts are required");
   }
 
-  const url = `https://pypi.org/pypi/${encodeURIComponent(projectName)}/${encodeURIComponent(version)}/json`;
+  const url = `${baseUrl}/pypi/${encodeURIComponent(projectName)}/${encodeURIComponent(version)}/json`;
   const response = await fetchImplementation(url, {
     headers: { Accept: "application/json" },
     redirect: "error",
@@ -2001,9 +2017,14 @@ async function runCli(argv) {
   }
 
   if (command === "check-pypi-unused") {
-    requireOptions(options, ["project", "version"]);
+    requireOptions(options, ["project", "version"], ["index"]);
     emitResult(
-      await assertPypiVersionUnused(options.project, options.version),
+      await assertPypiVersionUnused(
+        options.project,
+        options.version,
+        globalThis.fetch,
+        resolvePypiIndexBaseUrl(options.index),
+      ),
       {},
       null,
     );
@@ -2011,7 +2032,11 @@ async function runCli(argv) {
   }
 
   if (command === "check-pypi-published") {
-    requireOptions(options, ["project", "version", "channel", "dist-dir"]);
+    requireOptions(
+      options,
+      ["project", "version", "channel", "dist-dir"],
+      ["index"],
+    );
     const artifacts = validateArtifacts(
       options.channel,
       options.version,
@@ -2022,6 +2047,8 @@ async function runCli(argv) {
         options.project,
         options.version,
         artifacts,
+        globalThis.fetch,
+        resolvePypiIndexBaseUrl(options.index),
       ),
       {},
       null,

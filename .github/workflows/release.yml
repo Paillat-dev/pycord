@@ -15,6 +15,11 @@ on:
         type: string
         description: "Canonical production version (for example, 2.9.0 or 2.9.0rc1)"
         required: true
+      test_pypi:
+        type: boolean
+        description: "Publish/Finalize: use test.pypi.org instead of pypi.org"
+        required: true
+        default: false
       sync_readthedocs:
         type: boolean
         description: "Finalize: sync and activate the matching Read the Docs version"
@@ -167,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: release
-      url: https://pypi.org/p/py-cord
+      url: ${{ inputs.test_pypi && 'https://test.pypi.org/p/py-cord' || 'https://pypi.org/p/py-cord' }}
     permissions:
       contents: write
       id-token: write
@@ -234,6 +239,7 @@ jobs:
           node .github/scripts/release-tools.mjs check-pypi-unused
           --project py-cord
           --version "$VERSION"
+          --index "${{ inputs.test_pypi && 'testpypi' || 'pypi' }}"
 
       - name: "Verify the production tag"
         id: tag
@@ -399,7 +405,9 @@ jobs:
           "${{ steps.artifacts.outputs.sdist_path }}"
 
       - name: "Publish distributions to PyPI"
-        run: uv publish --trusted-publishing always
+        run: >-
+          uv publish --trusted-publishing always
+          ${{ inputs.test_pypi && '--publish-url https://test.pypi.org/legacy/' || '' }}
 
       # This phase intentionally ends after trusted publishing.
 
@@ -497,6 +505,7 @@ jobs:
           --channel production
           --version "$VERSION"
           --dist-dir "${{ steps.artifacts.outputs.dist_dir }}"
+          --index "${{ inputs.test_pypi && 'testpypi' || 'pypi' }}"
 
       - name: "Sync and activate Read the Docs version"
         if: ${{ inputs.sync_readthedocs }}
