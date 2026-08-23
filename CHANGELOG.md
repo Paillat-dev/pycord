@@ -12,12 +12,22 @@ These changes are available on the `master` branch, but have not yet been releas
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Deprecated
+
+### Removed
+
+## [2.8.2rc1] - 2026-08-23
+
+### Added
+
 - Added `Member.vr_status` property.
   ([#3328](https://github.com/Pycord-Development/pycord/pull/3328))
 - Added `SlashCommandGroup.add_command`.
   ([#3346](https://github.com/Pycord-Development/pycord/pull/3346))
-
-### Changed
 
 ### Fixed
 
@@ -25,10 +35,6 @@ These changes are available on the `master` branch, but have not yet been releas
   when `contexts` is `None`. ([#3320](https://github.com/Pycord-Development/pycord/pull/3320))
 - Fix `SyntaxWarning` about `return` in a `finally` block raised on Python 3.14+
   ([#3332](https://github.com/Pycord-Development/pycord/pull/3334))
-
-### Deprecated
-
-### Removed
 
 ## [2.8.1] - 2026-07-25
 
@@ -1768,5 +1774,6 @@ These changes are available on the `master` branch, but have not yet been releas
 [2.8.0rc1]: https://github.com/Pycord-Development/pycord/compare/v2.7.2...v2.8.0rc1
 [2.8.0rc2]: https://github.com/Pycord-Development/pycord/compare/v2.8.0rc1...v2.8.0rc2
 [2.8.1]: https://github.com/Pycord-Development/pycord/compare/v2.8.0...v2.8.1
-[unreleased]: https://github.com/Pycord-Development/pycord/compare/v2.8.1...HEAD
+[2.8.2rc1]: https://github.com/Paillat-dev/pycord/compare/v2.8.1...v2.8.2rc1
+[unreleased]: https://github.com/Paillat-dev/pycord/compare/v2.8.2rc1...HEAD
 [version guarantees]: https://docs.pycord.dev/en/stable/version_guarantees.html
