@@ -46,6 +46,7 @@ const CLI_USAGE = `Usage: node .github/scripts/release-tools.mjs <command> [opti
 Shared release commands:
   derive                  Validate a version and write derived release outputs
   prepare-dev-source      Copy tracked files and rewrite py-cord as py-cord-dev
+  rewrite-project-name    Rewrite the pyproject [project].name in place
   stage-artifacts         Validate and stage the exact wheel and source archive
   validate-artifacts      Validate exact channel-specific distribution files
   check-tag               Classify the remote annotated tag state
@@ -97,6 +98,18 @@ function requireTag(value) {
   return tag;
 }
 
+function requireDistribution(value) {
+  const distribution = requireString(value, "distribution");
+  if (!/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/.test(distribution)) {
+    fail(`invalid distribution name '${distribution}'`);
+  }
+  return distribution;
+}
+
+function normalizeDistribution(distribution) {
+  return distribution.toLowerCase().replace(/[-_.]+/g, "_");
+}
+
 export function parseReleaseVersion(channel, version) {
   if (!Object.hasOwn(VERSION_PATTERNS, channel)) {
     fail(`unsupported release channel '${channel}'`);
@@ -122,9 +135,12 @@ export function parseReleaseVersion(channel, version) {
   });
 }
 
-export function deriveRelease(channel, version) {
+export function deriveRelease(channel, version, distribution = null) {
   const parsed = parseReleaseVersion(channel, version);
   if (channel === "dev") {
+    if (distribution !== null) {
+      fail("the dev channel does not support a distribution override");
+    }
     return Object.freeze({
       ...parsed,
       distribution: "py-cord-dev",
@@ -137,15 +153,18 @@ export function deriveRelease(channel, version) {
     });
   }
 
+  const distributionName =
+    distribution === null ? "py-cord" : requireDistribution(distribution);
+  const normalized = normalizeDistribution(distributionName);
   return Object.freeze({
     ...parsed,
-    distribution: "py-cord",
-    normalizedDistribution: "py_cord",
+    distribution: distributionName,
+    normalizedDistribution: normalized,
     tag: `v${version}`,
     title: `v${version}`,
     versionBranch: `v${parsed.major}.${parsed.minor}.x`,
-    wheelName: `py_cord-${version}-py3-none-any.whl`,
-    sdistName: `py_cord-${version}.tar.gz`,
+    wheelName: `${normalized}-${version}-py3-none-any.whl`,
+    sdistName: `${normalized}-${version}.tar.gz`,
   });
 }
 
@@ -794,7 +813,8 @@ function validateTrackedPath(file) {
   return parts;
 }
 
-export function rewriteProjectNameText(contents) {
+export function rewriteProjectNameText(contents, distribution = "py-cord-dev") {
+  const replacement = requireDistribution(distribution);
   const text = requireString(contents, "pyproject contents");
   const lines = text.split(/(?<=\n)/);
   let inProject = false;
@@ -827,7 +847,7 @@ export function rewriteProjectNameText(contents) {
         `[project].name must be exactly 'py-cord', found '${assignment[3]}'`,
       );
     }
-    return `${assignment[1]}${assignment[2]}py-cord-dev${assignment[4]}${assignment[5]}${assignment[6] ?? ""}`;
+    return `${assignment[1]}${assignment[2]}${replacement}${assignment[4]}${assignment[5]}${assignment[6] ?? ""}`;
   });
 
   if (projectTables !== 1) {
@@ -975,8 +995,13 @@ export function sha256File(filePath) {
   return `sha256:${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
 }
 
-export function validateArtifacts(channel, version, distDirectory) {
-  const release = deriveRelease(channel, version);
+export function validateArtifacts(
+  channel,
+  version,
+  distDirectory,
+  distribution = null,
+) {
+  const release = deriveRelease(channel, version, distribution);
   const distDir = realpathSync(
     requireString(distDirectory, "distribution directory"),
   );
@@ -1675,8 +1700,16 @@ async function runCli(argv) {
   }
 
   if (command === "derive") {
-    requireOptions(options, ["channel", "version"], ["github-output"]);
-    const release = deriveRelease(options.channel, options.version);
+    requireOptions(
+      options,
+      ["channel", "version"],
+      ["github-output", "distribution"],
+    );
+    const release = deriveRelease(
+      options.channel,
+      options.version,
+      options.distribution ?? null,
+    );
     emitResult(
       release,
       {
@@ -1805,6 +1838,24 @@ async function runCli(argv) {
     return;
   }
 
+  if (command === "rewrite-project-name") {
+    requireOptions(options, ["path", "distribution"]);
+    const pyprojectPath = resolve(
+      requireString(options.path, "pyproject path"),
+    );
+    const rewritten = rewriteProjectNameText(
+      readFileSync(pyprojectPath, "utf8"),
+      options.distribution,
+    );
+    writeFileSync(pyprojectPath, rewritten, "utf8");
+    emitResult(
+      { path: pyprojectPath, distribution: options.distribution },
+      {},
+      null,
+    );
+    return;
+  }
+
   if (command === "source-date-epoch") {
     requireOptions(options, ["repository", "commit"], ["github-output"]);
     const epoch = deriveSourceDateEpoch(options.repository, options.commit);
@@ -1820,12 +1871,13 @@ async function runCli(argv) {
     requireOptions(
       options,
       ["channel", "version", "dist-dir"],
-      ["github-output"],
+      ["github-output", "distribution"],
     );
     const artifacts = validateArtifacts(
       options.channel,
       options.version,
       options["dist-dir"],
+      options.distribution ?? null,
     );
     emitResult(
       artifacts,
@@ -1966,17 +2018,22 @@ async function runCli(argv) {
         "repository",
         "tag-state",
       ],
-      ["github-output", "token-env"],
+      ["github-output", "token-env", "distribution"],
     );
     const tokenEnvironment = options["token-env"] ?? "GITHUB_TOKEN";
     if (!OUTPUT_NAME_PATTERN.test(tokenEnvironment)) {
       fail(`invalid token environment variable '${tokenEnvironment}'`);
     }
-    const derived = deriveRelease(options.channel, options.version);
+    const derived = deriveRelease(
+      options.channel,
+      options.version,
+      options.distribution ?? null,
+    );
     const artifacts = validateArtifacts(
       options.channel,
       options.version,
       options["dist-dir"],
+      options.distribution ?? null,
     );
     const payload = await fetchGitHubReleaseState(
       options.repository,
@@ -2035,12 +2092,13 @@ async function runCli(argv) {
     requireOptions(
       options,
       ["project", "version", "channel", "dist-dir"],
-      ["index"],
+      ["index", "distribution"],
     );
     const artifacts = validateArtifacts(
       options.channel,
       options.version,
       options["dist-dir"],
+      options.distribution ?? null,
     );
     emitResult(
       await assertPypiVersionPublished(

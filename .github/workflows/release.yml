@@ -175,13 +175,14 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: release
-      url: ${{ inputs.test_pypi && 'https://test.pypi.org/p/py-cord' || 'https://pypi.org/p/py-cord' }}
+      url: ${{ format(inputs.test_pypi && 'https://test.pypi.org/p/{0}' || 'https://pypi.org/p/{0}', vars.PYPI_PROJECT || 'py-cord') }}
     permissions:
       contents: write
       id-token: write
       attestations: write
     env:
       VERSION: ${{ inputs.version }}
+      PYPI_PROJECT: ${{ vars.PYPI_PROJECT || 'py-cord' }}
     steps:
       - name: "Security Check"
         uses: Pycord-Development/execute-whitelist-action@107fcb23ce15f46d7fa11ffceb0d803140d7f220 # v2.2.0
@@ -206,6 +207,7 @@ jobs:
           node .github/scripts/release-tools.mjs derive
           --channel production
           --version "$VERSION"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Verify prepared source commit"
         env:
@@ -240,7 +242,7 @@ jobs:
       - name: "Require an unused PyPI production version"
         run: >-
           node .github/scripts/release-tools.mjs check-pypi-unused
-          --project py-cord
+          --project "$PYPI_PROJECT"
           --version "$VERSION"
           --index "${{ inputs.test_pypi && 'testpypi' || 'pypi' }}"
 
@@ -261,9 +263,17 @@ jobs:
           groups: "release"
           frozen: "true"
 
+      - name: "Apply PyPI project name override"
+        if: ${{ (vars.PYPI_PROJECT || 'py-cord') != 'py-cord' }}
+        run: >-
+          node .github/scripts/release-tools.mjs rewrite-project-name
+          --path "$GITHUB_WORKSPACE/pyproject.toml"
+          --distribution "$PYPI_PROJECT"
+
       - name: "Build wheel and source distribution"
         env:
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.source_date_epoch }}
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
         run: uv build --no-sources --clear --no-create-gitignore
 
       - name: "Validate production distributions"
@@ -273,6 +283,7 @@ jobs:
           --channel production
           --version "$VERSION"
           --dist-dir "$GITHUB_WORKSPACE/dist"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Validate distribution metadata"
         run: twine check --strict "${{ steps.artifacts.outputs.wheel_path }}" "${{ steps.artifacts.outputs.sdist_path }}"
@@ -286,7 +297,7 @@ jobs:
           uv venv --clear --python 3.14 "$VERIFY_ENV"
           uv pip install --python "$VERIFY_ENV/bin/python" "$WHEEL_PATH"
           cd "$VERIFY_ENV"
-          "$VERIFY_ENV/bin/python" -c 'import importlib.metadata as metadata, os; import discord; expected = os.environ["EXPECTED_VERSION"]; assert metadata.version("py-cord") == expected; assert discord.__version__ == expected'
+          "$VERIFY_ENV/bin/python" -c 'import importlib.metadata as metadata, os; import discord; expected = os.environ["EXPECTED_VERSION"]; assert metadata.version(os.environ["PYPI_PROJECT"]) == expected; assert discord.__version__ == expected'
 
       - name: "Generate wheel build provenance attestation"
         id: attest_wheel
@@ -334,6 +345,7 @@ jobs:
           --dist-dir "${{ steps.artifacts.outputs.dist_dir }}"
           --repository "$GITHUB_REPOSITORY"
           --tag-state "${{ steps.tag.outputs.tag_state }}"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Create immutable GitHub release"
         if: ${{ steps.release_state.outputs.create_release == 'true' }}
@@ -398,6 +410,7 @@ jobs:
           --dist-dir "${{ steps.artifacts.outputs.dist_dir }}"
           --repository "$GITHUB_REPOSITORY"
           --tag-state "${{ steps.tag.outputs.tag_state }}"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Convert build provenance attestations for PyPI"
         run: >-
@@ -425,6 +438,7 @@ jobs:
       issues: write
     env:
       VERSION: ${{ inputs.version }}
+      PYPI_PROJECT: ${{ vars.PYPI_PROJECT || 'py-cord' }}
     steps:
       - name: "Security Check"
         uses: Pycord-Development/execute-whitelist-action@107fcb23ce15f46d7fa11ffceb0d803140d7f220 # v2.2.0
@@ -449,6 +463,7 @@ jobs:
           node .github/scripts/release-tools.mjs derive
           --channel production
           --version "$VERSION"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Derive previous production tags"
         id: history
@@ -488,6 +503,7 @@ jobs:
           --channel production
           --version "$VERSION"
           --dist-dir "$GITHUB_WORKSPACE/dist"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Verify immutable GitHub release and assets"
         env:
@@ -500,15 +516,17 @@ jobs:
           --dist-dir "${{ steps.artifacts.outputs.dist_dir }}"
           --repository "$GITHUB_REPOSITORY"
           --tag-state "${{ steps.tag.outputs.tag_state }}"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Verify exact PyPI publication"
         run: >-
           node .github/scripts/release-tools.mjs check-pypi-published
-          --project py-cord
+          --project "$PYPI_PROJECT"
           --channel production
           --version "$VERSION"
           --dist-dir "${{ steps.artifacts.outputs.dist_dir }}"
           --index "${{ inputs.test_pypi && 'testpypi' || 'pypi' }}"
+          --distribution "$PYPI_PROJECT"
 
       - name: "Sync and activate Read the Docs version"
         if: ${{ inputs.sync_readthedocs }}

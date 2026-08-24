@@ -197,6 +197,26 @@ test("derives future production branch, tag, artifacts, and prerelease state", (
   assert.equal(release.isPrerelease, true);
 });
 
+test("derives production values with a distribution override", () => {
+  const release = deriveRelease("production", "2.9.0rc1", "Paillat.py-cord");
+  assert.equal(release.distribution, "Paillat.py-cord");
+  assert.equal(release.normalizedDistribution, "paillat_py_cord");
+  assert.equal(release.tag, "v2.9.0rc1");
+  assert.equal(release.wheelName, "paillat_py_cord-2.9.0rc1-py3-none-any.whl");
+  assert.equal(release.sdistName, "paillat_py_cord-2.9.0rc1.tar.gz");
+});
+
+test("rejects invalid or dev-channel distribution overrides", () => {
+  assert.throws(
+    () => deriveRelease("production", "2.9.0", "-py-cord"),
+    /invalid distribution name/,
+  );
+  assert.throws(
+    () => deriveRelease("dev", "2.9.0.dev1", "py-cord-test"),
+    /does not support a distribution override/,
+  );
+});
+
 test("rewrites only the project name", () => {
   const before =
     '[project]\nname = "py-cord" # distribution\ndescription = "py-cord remains here"\n\n[project.urls]\nname = "unchanged"\n';
@@ -204,6 +224,18 @@ test("rewrites only the project name", () => {
   assert.equal(
     after,
     '[project]\nname = "py-cord-dev" # distribution\ndescription = "py-cord remains here"\n\n[project.urls]\nname = "unchanged"\n',
+  );
+});
+
+test("rewrites the project name to a distribution override", () => {
+  const after = rewriteProjectNameText(
+    '[project]\nname = "py-cord"\n',
+    "py-cord-test",
+  );
+  assert.equal(after, '[project]\nname = "py-cord-test"\n');
+  assert.throws(
+    () => rewriteProjectNameText('[project]\nname = "py-cord"\n', "bad name"),
+    /invalid distribution name/,
   );
 });
 
