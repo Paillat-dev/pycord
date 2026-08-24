@@ -20,6 +20,8 @@ These changes are available on the `master` branch, but have not yet been releas
 
 ### Removed
 
+## [2.8.2rc2] - 2026-08-24
+
 ## [2.8.2rc1] - 2026-08-23
 
 ### Added
@@ -1775,5 +1777,6 @@ These changes are available on the `master` branch, but have not yet been releas
 [2.8.0rc2]: https://github.com/Pycord-Development/pycord/compare/v2.8.0rc1...v2.8.0rc2
 [2.8.1]: https://github.com/Pycord-Development/pycord/compare/v2.8.0...v2.8.1
 [2.8.2rc1]: https://github.com/Paillat-dev/pycord/compare/v2.8.1...v2.8.2rc1
-[unreleased]: https://github.com/Paillat-dev/pycord/compare/v2.8.2rc1...HEAD
+[2.8.2rc2]: https://github.com/Paillat-dev/pycord/compare/v2.8.2rc1...v2.8.2rc2
+[unreleased]: https://github.com/Paillat-dev/pycord/compare/v2.8.2rc2...HEAD
 [version guarantees]: https://docs.pycord.dev/en/stable/version_guarantees.html
