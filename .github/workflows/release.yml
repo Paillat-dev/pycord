@@ -192,9 +192,6 @@ jobs:
 
       - name: "Checkout Repository"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          fetch-tags: true
 
       - name: "Setup Node.js"
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -264,7 +261,6 @@ jobs:
           frozen: "true"
 
       - name: "Apply PyPI project name override"
-        if: ${{ (vars.PYPI_PROJECT || 'py-cord') != 'py-cord' }}
         run: >-
           node .github/scripts/release-tools.mjs rewrite-project-name
           --path "$GITHUB_WORKSPACE/pyproject.toml"
@@ -273,7 +269,7 @@ jobs:
       - name: "Build wheel and source distribution"
         env:
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.source_date_epoch }}
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.release.outputs.version }}
         run: uv build --no-sources --clear --no-create-gitignore
 
       - name: "Validate production distributions"
